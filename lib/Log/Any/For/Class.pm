@@ -108,7 +108,7 @@ sub add_logging_to_class {
 
     for my $class (@$classes) {
 
-        die "Invalid class name" unless $class =~ /\A\w+(::\w+)*\z/;
+        die "Invalid class name $class" unless $class =~ /\A\w+(::\w+)*\z/;
 
         # require class
         unless (package_exists($class)) {
