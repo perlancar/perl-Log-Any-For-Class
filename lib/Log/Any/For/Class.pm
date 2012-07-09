@@ -7,6 +7,7 @@ use Log::Any '$log';
 
 # VERSION
 
+use Scalar::Util qw(blessed);
 # doesn't currently work, Log::Log4perl not fooled
 #use Sub::Uplevel;
 
@@ -32,12 +33,20 @@ sub package_exists {
 sub _default_precall_logger {
     my %args = @_;
     #uplevel 2, $args{orig}, @{$args{args}};
+
+    # exclude self
+    shift @{$args{args}} if blessed($args{args}[0]);
+
     $log->tracef("-> %s(%s)", $args{name}, $args{args});
 }
 
 sub _default_postcall_logger {
     my %args = @_;
     #uplevel 2, $args{orig}, @{$args{args}};
+
+    # exclude self
+    shift @{$args{args}} if blessed($args{args}[0]);
+
     $log->tracef("<- %s() = %s", $args{name}, $args{result});
 }
 
@@ -143,7 +152,7 @@ sub add_logging_to_class {
                 $logger->(
                     orig   => $sub,
                     name   => "${class}::$symbol",
-                    args   => \@args,
+                    args   => [@args],
                 );
 
                 my $wa = wantarray;
@@ -158,7 +167,7 @@ sub add_logging_to_class {
                 $logger->(
                     orig   => $sub,
                     name   => "${class}::$symbol",
-                    args   => \@args,
+                    args   => [@args],
                     result => \@res,
                 );
 
