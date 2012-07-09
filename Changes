@@ -1,5 +1,10 @@
 Revision history for Log-Any-For-Class
 
+0.02     2012-07-10 (SHARYANTO)
+
+         No functional changes. Add missing dep to Log::Any.
+
+
 0.01     2012-07-10 (SHARYANTO)
 
          First release.
