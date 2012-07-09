@@ -15,6 +15,20 @@ require Exporter;
 our @ISA = qw(Exporter);
 our @EXPORT_OK = qw(add_logging_to_class);
 
+# XXX copied from SHARYANTO::Package::Util
+sub package_exists {
+    no strict 'refs';
+
+    my $pkg = shift;
+
+    return unless $pkg =~ /\A\w+(::\w+)*\z/;
+    if ($pkg =~ s/::(\w+)\z//) {
+        return !!${$pkg . "::"}{$1 . "::"};
+    } else {
+        return !!$::{$pkg . "::"};
+    }
+}
+
 sub _default_precall_logger {
     my %args = @_;
     #uplevel 2, $args{orig}, @{$args{args}};
@@ -91,7 +105,9 @@ sub add_logging_to_class {
         die "Invalid class name" unless $class =~ /\A\w+(::\w+)*\z/;
 
         # require class
-        eval "use $class; 1" or die "Can't load $class: $@";
+        unless (package_exists($class)) {
+            eval "use $class; 1" or die "Can't load $class: $@";
+        }
 
         my $src;
         # get the calling package symbol table name
