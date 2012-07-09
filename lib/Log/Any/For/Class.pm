@@ -7,7 +7,8 @@ use Log::Any '$log';
 
 # VERSION
 
-use Sub::Uplevel;
+# doesn't currently work, Log::Log4perl not fooled
+#use Sub::Uplevel;
 
 our %SPEC;
 require Exporter;
@@ -16,13 +17,13 @@ our @EXPORT_OK = qw(add_logging_to_class);
 
 sub _default_precall_logger {
     my %args = @_;
-    uplevel 2, $args{orig}, @{$args{args}};
+    #uplevel 2, $args{orig}, @{$args{args}};
     $log->tracef("-> %s(%s)", $args{name}, $args{args});
 }
 
 sub _default_postcall_logger {
     my %args = @_;
-    uplevel 2, $args{orig}, @{$args{args}};
+    #uplevel 2, $args{orig}, @{$args{args}};
     $log->tracef("<- %s() = %s", $args{name}, $args{result});
 }
 
