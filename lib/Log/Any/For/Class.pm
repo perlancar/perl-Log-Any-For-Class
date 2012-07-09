@@ -44,9 +44,6 @@ sub _default_postcall_logger {
     my %args = @_;
     #uplevel 2, $args{orig}, @{$args{args}};
 
-    # exclude self
-    shift @{$args{args}} if blessed($args{args}[0]);
-
     $log->tracef("<- %s() = %s", $args{name}, $args{result});
 }
 
