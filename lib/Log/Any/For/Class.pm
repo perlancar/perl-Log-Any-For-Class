@@ -3,13 +3,28 @@ package Log::Any::For::Class;
 use 5.010;
 use strict;
 use warnings;
+use Log::Any '$log';
 
 # VERSION
 
 use Sub::Uplevel;
 
 our %SPEC;
+require Exporter;
+our @ISA = qw(Exporter);
 our @EXPORT_OK = qw(add_logging_to_class);
+
+sub _default_precall_logger {
+    my %args = @_;
+    uplevel 2, $args{orig}, @{$args{args}};
+    $log->tracef("-> %s(%s)", $args{name}, $args{args});
+}
+
+sub _default_postcall_logger {
+    my %args = @_;
+    uplevel 2, $args{orig}, @{$args{args}};
+    $log->tracef("<- %s() = %s", $args{name}, $args{result});
+}
 
 $SPEC{add_logging_to_class} = {
     v => 1.1,
@@ -70,78 +85,82 @@ sub add_logging_to_class {
     my $classes = $args{classes} or die "Please specify 'classes'";
     $classes = [$classes] unless ref($classes) eq 'ARRAY';
 
-}
+    for my $class (@$classes) {
 
-sub _wrap_symbol {
-    my ($traced, $logger) = @_;
-    my $src;
+        die "Invalid class name" unless $class =~ /\A\w+(::\w+)*\z/;
 
-    # get the calling package symbol table name
-    {
-        no strict 'refs';
-        $src = \%{ $traced . '::' };
-    }
+        # require class
+        eval "use $class; 1" or die "Can't load $class: $@";
 
-    # loop through all symbols in calling package, looking for subs
-    for my $symbol (keys %$src) {
-        # get all code references, make sure they're valid
-        my $sub = *{ $src->{$symbol} }{CODE};
-        next unless defined $sub and defined &$sub;
-
-        # save all other slots of the typeglob
-        my @slots;
-
-        for my $slot (qw( SCALAR ARRAY HASH IO FORMAT )) {
-            my $elem = *{ $src->{$symbol} }{$slot};
-            next unless defined $elem;
-            push @slots, $elem;
+        my $src;
+        # get the calling package symbol table name
+        {
+            no strict 'refs';
+            $src = \%{ $class . '::' };
         }
 
-        # clear out the source glob
-        undef $src->{$symbol};
+        # loop through all symbols in calling package, looking for subs
+        for my $symbol (keys %$src) {
+            # get all code references, make sure they're valid
+            my $sub = *{ $src->{$symbol} }{CODE};
+            next unless defined $sub and defined &$sub;
 
-        # replace the sub in the source
-        $src->{$symbol} = sub {
-            my @args = @_;
-            _log_call->(
-                name   => "${traced}::$symbol",
-                logger => $logger,
-                args   => [ @_ ]
-            );
-            return $sub->(@_);
-        };
+            # save all other slots of the typeglob
+            my @slots;
 
-        # replace the other slot elements
-        for my $elem (@slots) {
-            $src->{$symbol} = $elem;
-        }
-    }
-}
+            for my $slot (qw( SCALAR ARRAY HASH IO FORMAT )) {
+                my $elem = *{ $src->{$symbol} }{$slot};
+                next unless defined $elem;
+                push @slots, $elem;
+            }
 
-{
-    my $logger = sub { require Carp; Carp::carp( join ', ', @_ ) };
+            # clear out the source glob
+            undef $src->{$symbol};
 
-    # set a callback sub for logging
-    sub callback {
-        # should allow this to be a class method :)
-        shift if @_ > 1;
+            # replace the sub in the source
+            $src->{$symbol} = sub {
+                my $logger;
+                my @args = @_;
 
-        my $coderef = shift;
-        unless (ref($coderef) eq 'CODE' and defined(&$coderef)) {
-            require Carp;
-            Carp::croak("$coderef is not a code reference!");
-        }
+                $logger = $args{precall_logger} // \&_default_precall_logger;
+                $logger->(
+                    orig   => $sub,
+                    name   => "${class}::$symbol",
+                    args   => \@args,
+                );
 
-        $logger = $coderef;
-    }
+                my $wa = wantarray;
+                my @res;
+                if ($wa) {
+                    @res =  $sub->(@args);
+                } else {
+                    $res[0] = $sub->(@args);
+                }
 
-    # where logging actually happens
-    sub _log_call {
-        my %args    = @_;
-        my $log_sub = $args{logger} || $logger;
+                $logger = $args{postcall_logger} // \&_default_postcall_logger;
+                $logger->(
+                    orig   => $sub,
+                    name   => "${class}::$symbol",
+                    args   => \@args,
+                    result => \@res,
+                );
 
-        $log_sub->($args{name}, @{ $args{args} });
-    }
+                if ($wa) {
+                    return @res;
+                } else {
+                    return $res[0];
+                }
+            };
+
+            # replace the other slot elements
+            for my $elem (@slots) {
+                $src->{$symbol} = $elem;
+            }
+        } # for $symbol
+
+    } # for $class
+
+    1;
 }
 
 1;
