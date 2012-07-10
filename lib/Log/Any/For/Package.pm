@@ -171,8 +171,10 @@ sub add_logging_to_package {
                 my @res;
                 if ($wa) {
                     @res =  $sub->(@args);
-                } else {
+                } elsif (defined $wa) {
                     $res[0] = $sub->(@args);
+                } else {
+                    $sub->(@args);
                 }
 
                 $logger = $args{postcall_logger} // \&_default_postcall_logger;
