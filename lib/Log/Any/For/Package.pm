@@ -7,8 +7,6 @@ use Log::Any '$log';
 
 # VERSION
 
-use Scalar::Util qw(blessed);
-# doesn't currently work, Log::Log4perl not fooled
 #use Sub::Uplevel;
 
 our %SPEC;
