@@ -19,27 +19,26 @@ our @ISA = qw(Log::Any::For::Package Exporter);
 our @EXPORT_OK = qw(add_logging_to_class);
 
 sub _default_precall_logger {
-    my %args  = @_;
-    my $name  = $args{name};
-    my $margs = $args{args};
+    my $args  = shift;
+    my $margs = $args->{args};
 
-    #uplevel 2, $args{orig}, @$margs;
+    #uplevel 2, $args->{orig}, @$margs;
 
     # exclude $self or package
-    my $o = shift @$margs;
+    $margs->[0] = '$self' if blessed($margs->[0]);
 
-    unless (blessed $o) {
-        $name =~ s/::(\w+)$/->$1/;
-    }
-
-    $log->tracef("---> %s(%s)", $name, $margs);
+    $log->tracef("---> %s(%s)", $args->{name}, $margs);
 }
 
 sub _default_postcall_logger {
-    my %args = @_;
-    #uplevel 2, $args{orig}, @{$args{args}};
+    my $args = shift;
+    #uplevel 2, $args->{orig}, @{$args->{args}};
 
-    $log->tracef("<--- %s() = %s", $args{name}, $args{result});
+    if (@{$args->{result}}) {
+        $log->tracef("<--- %s() = %s", $args->{name}, $args->{result});
+    } else {
+        $log->tracef("<--- %s()", $args->{name});
+    }
 }
 
 my $spec = $Log::Any::For::Package::SPEC{add_logging_to_package};

@@ -29,17 +29,21 @@ sub package_exists {
 }
 
 sub _default_precall_logger {
-    my %args = @_;
-    #uplevel 2, $args{orig}, @{$args{args}};
+    my $args = shift;
+    #uplevel 2, $args->{orig}, @{$args->{args}};
 
-    $log->tracef("---> %s(%s)", $args{name}, $args{args});
+    $log->tracef("---> %s(%s)", $args->{name}, $args->{args});
 }
 
 sub _default_postcall_logger {
-    my %args = @_;
-    #uplevel 2, $args{orig}, @{$args{args}};
+    my $args = shift;
+    #uplevel 2, $args->{orig}, @{$args->{args}};
 
-    $log->tracef("<--- %s() = %s", $args{name}, $args{result});
+    if (@{$args->{result}}) {
+        $log->tracef("<--- %s() = %s", $args->{name}, $args->{result});
+    } else {
+        $log->tracef("<--- %s()", $args->{name});
+    }
 }
 
 $SPEC{add_logging_to_package} = {
@@ -159,13 +163,14 @@ sub add_logging_to_package {
             $src->{$symbol} = sub {
                 my $logger;
                 my @args = @_;
-
-                $logger = $args{precall_logger} // \&_default_precall_logger;
-                $logger->(
+                my %largs = (
                     orig   => $sub,
                     name   => $name,
                     args   => [@args],
                 );
+
+                $logger = $args{precall_logger} // \&_default_precall_logger;
+                $logger->(\%largs);
 
                 my $wa = wantarray;
                 my @res;
@@ -178,17 +183,15 @@ sub add_logging_to_package {
                 }
 
                 $logger = $args{postcall_logger} // \&_default_postcall_logger;
-                $logger->(
-                    orig   => $sub,
-                    name   => $name,
-                    args   => [@args],
-                    result => \@res,
-                );
+                $largs{result} = \@res;
+                $logger->(\%largs);
 
                 if ($wa) {
                     return @res;
-                } else {
+                } elsif (defined $wa) {
                     return $res[0];
+                } else {
+                    return;
                 }
             };
 
