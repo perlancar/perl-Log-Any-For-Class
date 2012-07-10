@@ -18,6 +18,30 @@ use Log::Any::For::Package qw(add_logging_to_package);
 our @ISA = qw(Log::Any::For::Package Exporter);
 our @EXPORT_OK = qw(add_logging_to_class);
 
+sub _default_precall_logger {
+    my %args  = @_;
+    my $name  = $args{name};
+    my $margs = $args{args};
+
+    #uplevel 2, $args{orig}, @$margs;
+
+    # exclude $self or package
+    my $o = shift @$margs;
+
+    unless (blessed $o) {
+        $name =~ s/::(\w+)$/->$1/;
+    }
+
+    $log->tracef("---> %s(%s)", $name, $margs);
+}
+
+sub _default_postcall_logger {
+    my %args = @_;
+    #uplevel 2, $args{orig}, @{$args{args}};
+
+    $log->tracef("<--- %s() = %s", $args{name}, $args{result});
+}
+
 my $spec = $Log::Any::For::Package::SPEC{add_logging_to_package};
 $spec->{summary} = 'Add logging to class';
 $spec->{description} = <<'_';
@@ -46,28 +70,8 @@ sub add_logging_to_class {
     $classes = [$classes] unless ref($classes) eq 'ARRAY';
     delete $args{classes};
 
-    $args{precall_logger} //= sub {
-        my %args  = @_;
-        my $name  = $args{name};
-        my $margs = $args{args};
-
-        #uplevel 2, $args{orig}, @$margs;
-
-        # exclude $self or package
-        my $o = shift @$margs;
-
-        unless (blessed $o) {
-            $name =~ s/::(\w+)$/->$1/;
-        }
-
-        $log->tracef("---> %s(%s)", $name, $margs);
-    };
-    $args{postcall_logger} //= sub {
-        my %args = @_;
-        #uplevel 2, $args{orig}, @{$args{args}};
-
-        $log->tracef("<--- %s() = %s", $args{name}, $args{result});
-    };
+    $args{precall_logger}  //= \&_default_precall_logger;
+    $args{postcall_logger} //= \&_default_postcall_logger;
 
     add_logging_to_package(
         %args,
