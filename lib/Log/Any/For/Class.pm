@@ -31,20 +31,27 @@ sub package_exists {
 }
 
 sub _default_precall_logger {
-    my %args = @_;
-    #uplevel 2, $args{orig}, @{$args{args}};
+    my %args  = @_;
+    my $name  = $args{name};
+    my $margs = $args{args};
 
-    # exclude self
-    shift @{$args{args}} if blessed($args{args}[0]);
+    #uplevel 2, $args{orig}, @$margs;
 
-    $log->tracef("-> %s(%s)", $args{name}, $args{args});
+    # exclude $self or package
+    my $o = shift @$margs;
+
+    unless (blessed $o) {
+        $name =~ s/::(\w+)$/->$1/;
+    }
+
+    $log->tracef("---> %s(%s)", $name, $margs);
 }
 
 sub _default_postcall_logger {
     my %args = @_;
     #uplevel 2, $args{orig}, @{$args{args}};
 
-    $log->tracef("<- %s() = %s", $args{name}, $args{result});
+    $log->tracef("<--- %s() = %s", $args{name}, $args{result});
 }
 
 $SPEC{add_logging_to_class} = {
@@ -203,6 +210,8 @@ Some code portion taken from L<Devel::TraceMethods>.
 
 =head1 SEE ALSO
 
-L<Log::Any::For::DBI>, an application for this module.
+L<Log::Any::For::Package>
+
+L<Log::Any::For::DBI>, an application of this module.
 
 =cut
