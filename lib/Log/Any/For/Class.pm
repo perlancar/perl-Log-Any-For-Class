@@ -62,6 +62,17 @@ $spec->{args}{classes} = {
     req => 1,
     pos => 0,
 };
+delete $spec->{args}{filter_subs};
+$spec->{args}{filter_methods} = {
+    summary => 'Filter methods to add logging to',
+    schema => ['array*' => {of=>'str*'}],
+    description => <<'_',
+
+The default is to add logging to all non-private methods. Private methods are
+those prefixed by `_`.
+
+_
+};
 $SPEC{add_logging_to_class} = $spec;
 sub add_logging_to_class {
     my %args = @_;
@@ -70,12 +81,16 @@ sub add_logging_to_class {
     $classes = [$classes] unless ref($classes) eq 'ARRAY';
     delete $args{classes};
 
+    my $filter_methods = $args{filter_methods};
+    delete $args{filter_methods};
+
     $args{precall_logger}  //= \&_default_precall_logger;
     $args{postcall_logger} //= \&_default_postcall_logger;
 
     add_logging_to_package(
         %args,
         packages => $classes,
+        filter_subs => $filter_methods,
     );
 }
 

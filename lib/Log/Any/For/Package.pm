@@ -73,7 +73,7 @@ Code will be called when logging method call. Code will be given a hash argument
 (coderef, the original method), `name` (string, the fully-qualified method
 name).
 
-You can use this mechanism to do selective logging, preprocess log message, etc.
+You can use this mechanism to customize logging.
 
 _
         },
@@ -87,8 +87,17 @@ will be given a hash argument %args containing these keys: `args` (arrayref, the
 original @_), `orig` (coderef, the original method), `name` (string, the
 fully-qualified method name), `result` (arrayref, the method result).
 
-You can use this mechanism to do selective logging, preprocess log message,
-etc.
+You can use this mechanism to customize logging.
+
+_
+        },
+        filter_subs => {
+            summary => 'Filter subroutines to add logging to',
+            schema => ['any*' => {of=>['regex*', 'code*']}],
+            description => <<'_',
+
+The default is to add logging to all non-private subroutines. Private
+subroutines are those prefixed by `_`.
 
 _
         },
@@ -96,10 +105,13 @@ _
     result_naked => 1,
 };
 sub add_logging_to_package {
+
     my %args = @_;
 
     my $packages = $args{packages} or die "Please specify 'packages'";
     $packages = [$packages] unless ref($packages) eq 'ARRAY';
+
+    my $filter = $args{filter_subs} // qr/[^_]/;
 
     for my $package (@$packages) {
 
@@ -124,6 +136,13 @@ sub add_logging_to_package {
             my $sub = *{ $src->{$symbol} }{CODE};
             next unless defined $sub and defined &$sub;
 
+            my $name = "${package}::$symbol";
+            if (ref($filter) eq 'CODE') {
+                next unless $filter->($name);
+            } else {
+                next unless $name =~ $filter;
+            }
+
             # save all other slots of the typeglob
             my @slots;
 
@@ -144,7 +163,7 @@ sub add_logging_to_package {
                 $logger = $args{precall_logger} // \&_default_precall_logger;
                 $logger->(
                     orig   => $sub,
-                    name   => "${package}::$symbol",
+                    name   => $name,
                     args   => [@args],
                 );
 
@@ -159,7 +178,7 @@ sub add_logging_to_package {
                 $logger = $args{postcall_logger} // \&_default_postcall_logger;
                 $logger->(
                     orig   => $sub,
-                    name   => "${package}::$symbol",
+                    name   => $name,
                     args   => [@args],
                     result => \@res,
                 );
