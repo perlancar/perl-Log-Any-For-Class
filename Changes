@@ -1,5 +1,17 @@
 Revision history for Log-Any-For-Class
 
+0.05     2012-07-10 (SHARYANTO)
+
+         [INCOMPATIBLE CHANGES]
+
+         - logger receives hashref arguments instead of hash, so it can modify
+           them.
+
+         [ENHANCEMENTS]
+
+         - Handle wantarray undef.
+
+
 0.04     2012-07-10 (SHARYANTO)
 
          [ENHANCEMENTS]
