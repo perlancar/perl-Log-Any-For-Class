@@ -64,7 +64,7 @@ $spec->{args}{classes} = {
 delete $spec->{args}{filter_subs};
 $spec->{args}{filter_methods} = {
     summary => 'Filter methods to add logging to',
-    schema => 'regex*',
+    schema => ['array*' => {of=>'str*'}],
     description => <<'_',
 
 The default is to add logging to all non-private methods. Private methods are
