@@ -4,6 +4,8 @@ use 5.010;
 use strict;
 use warnings;
 use Log::Any '$log';
+use Module::Patch 0.07 qw(patch_package);
+use SHARYANTO::Package::Util qw(package_exists);
 
 # VERSION
 
@@ -13,20 +15,6 @@ our %SPEC;
 require Exporter;
 our @ISA = qw(Exporter);
 our @EXPORT_OK = qw(add_logging_to_package);
-
-# XXX copied from SHARYANTO::Package::Util
-sub package_exists {
-    no strict 'refs';
-
-    my $pkg = shift;
-
-    return unless $pkg =~ /\A\w+(::\w+)*\z/;
-    if ($pkg =~ s/::(\w+)\z//) {
-        return !!${$pkg . "::"}{$1 . "::"};
-    } else {
-        return !!$::{$pkg . "::"};
-    }
-}
 
 sub _default_precall_logger {
     my $args = shift;
@@ -97,7 +85,7 @@ _
         },
         filter_subs => {
             summary => 'Filter subroutines to add logging to',
-            schema => ['any*' => {of=>['regex*', 'code*']}],
+            schema => 'regex*',
             description => <<'_',
 
 The default is to add logging to all non-private subroutines. Private
@@ -109,65 +97,25 @@ _
     result_naked => 1,
 };
 sub add_logging_to_package {
-
     my %args = @_;
 
-    my $packages = $args{packages} or die "Please specify 'packages'";
-    $packages = [$packages] unless ref($packages) eq 'ARRAY';
+    patch_package(
+        $args{packages},
+        [{
+            action => 'wrap',
+            sub_name => ($args{filter_subs} // ':public'),
+            code => sub {
+                my $ctx  = shift;
+                my $orig = shift;
 
-    my $filter = $args{filter_subs} // qr/[^_]/;
-
-    for my $package (@$packages) {
-
-        die "Invalid package name $package"
-            unless $package =~ /\A\w+(::\w+)*\z/;
-
-        # require module
-        unless (package_exists($package)) {
-            eval "use $package; 1" or die "Can't load $package: $@";
-        }
-
-        my $src;
-        # get the calling package symbol table name
-        {
-            no strict 'refs';
-            $src = \%{ $package . '::' };
-        }
-
-        # loop through all symbols in calling package, looking for subs
-        for my $symbol (keys %$src) {
-            # get all code references, make sure they're valid
-            my $sub = *{ $src->{$symbol} }{CODE};
-            next unless defined $sub and defined &$sub;
-
-            my $name = "${package}::$symbol";
-            if (ref($filter) eq 'CODE') {
-                next unless $filter->($name);
-            } else {
-                next unless $name =~ $filter;
-            }
-
-            # save all other slots of the typeglob
-            my @slots;
-
-            for my $slot (qw( SCALAR ARRAY HASH IO FORMAT )) {
-                my $elem = *{ $src->{$symbol} }{$slot};
-                next unless defined $elem;
-                push @slots, $elem;
-            }
-
-            # clear out the source glob
-            undef $src->{$symbol};
-
-            # replace the sub in the source
-            $src->{$symbol} = sub {
-                my $logger;
                 my @args = @_;
                 my %largs = (
-                    orig   => $sub,
-                    name   => $name,
+                    orig   => $orig,
+                    name   => $ctx->{orig_name},
                     args   => [@args],
                 );
+
+                my $logger;
 
                 $logger = $args{precall_logger} // \&_default_precall_logger;
                 $logger->(\%largs);
@@ -175,11 +123,11 @@ sub add_logging_to_package {
                 my $wa = wantarray;
                 my @res;
                 if ($wa) {
-                    @res =  $sub->(@args);
+                    @res =  $orig->(@args);
                 } elsif (defined $wa) {
-                    $res[0] = $sub->(@args);
+                    $res[0] = $orig->(@args);
                 } else {
-                    $sub->(@args);
+                    $orig->(@args);
                 }
 
                 $logger = $args{postcall_logger} // \&_default_postcall_logger;
@@ -193,17 +141,9 @@ sub add_logging_to_package {
                 } else {
                     return;
                 }
-            };
-
-            # replace the other slot elements
-            for my $elem (@slots) {
-                $src->{$symbol} = $elem;
-            }
-        } # for $symbol
-
-    } # for $package
-
-    1;
+            },
+        }]
+    );
 }
 
 1;
@@ -211,14 +151,17 @@ sub add_logging_to_package {
 
 =head1 SYNOPSIS
 
+ use My::Module;
+ use My::Other::Module;
  use Log::Any::For::Package qw(add_logging_to_package);
- add_logging_to_package(packages => [qw/My::Module My::Other::Module/]);
+
+ my $h = add_logging_to_package(packages => [qw/My::Module My::Other::Module/]);
+
  # now calls to your module functions are logged, by default at level 'trace'
+ My::Module::foo(...);
 
-
-=head1 CREDITS
-
-Some code portion taken from L<Devel::TraceMethods>.
+ # restore original subroutines
+ undef $h;
 
 
 =head1 SEE ALSO
