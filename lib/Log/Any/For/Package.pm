@@ -33,17 +33,20 @@ sub package_exists {
 }
 
 my $nest_level = 0;
-my $default_indent = 1;
+my $default_indent    = 1;
+my $default_max_depth = -1;
 
 sub _default_precall_logger {
     my $args  = shift;
 
     if ($log->is_trace) {
-        my $cargs  = $cleanser->clone_and_clean($args->{args});
         my $largs  = $args->{logger_args} // {};
-        my $indent = " " x ($nest_level * ($args->{logger_args}{indent} //
-                                             $default_indent));
-        $log->tracef("%s---> %s(%s)", $indent, $args->{name}, $cargs);
+        my $md     = $largs->{max_depth} // $default_max_depth;
+        if ($md == -1 || $nest_level < $md) {
+            my $indent = " "x($nest_level*($largs->{indent}//$default_indent));
+            my $cargs  = $cleanser->clone_and_clean($args->{args});
+            $log->tracef("%s---> %s(%s)", $indent, $args->{name}, $cargs);
+        }
     }
     $nest_level++;
 }
@@ -54,13 +57,15 @@ sub _default_postcall_logger {
     $nest_level--;
     if ($log->is_trace) {
         my $largs  = $args->{logger_args} // {};
-        my $indent = " " x ($nest_level * ($args->{logger_args}{indent} //
-                                               $default_indent));
-        if (@{$args->{result}}) {
-            my $cres = $cleanser->clone_and_clean($args->{result});
-            $log->tracef("%s<--- %s() = %s", $indent, $args->{name}, $cres);
-        } else {
-            $log->tracef("%s<--- %s()", $indent, $args->{name});
+        my $md     = $largs->{max_depth} // $default_max_depth;
+        if ($md == -1 || $nest_level < $md) {
+            my $indent = " "x($nest_level*($largs->{indent}//$default_indent));
+            if (@{$args->{result}}) {
+                my $cres = $cleanser->clone_and_clean($args->{result});
+                $log->tracef("%s<--- %s() = %s", $indent, $args->{name}, $cres);
+            } else {
+                $log->tracef("%s<--- %s()", $indent, $args->{name});
+            }
         }
     }
 }
@@ -103,6 +108,10 @@ The default logger accepts this arguments (in `logger_args`):
 * indent => INT (default: 0)
 
 Indent according to nesting level.
+
+* max_depth => INT (default: -1)
+
+Only log to this nesting level. -1 means unlimited.
 
 _
         },
