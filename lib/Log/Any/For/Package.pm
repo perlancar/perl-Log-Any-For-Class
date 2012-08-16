@@ -32,23 +32,35 @@ sub package_exists {
     }
 }
 
+my $nest_level = 0;
+my $default_indent = 1;
+
 sub _default_precall_logger {
-    my $args = shift;
+    my $args  = shift;
+
     if ($log->is_trace) {
-        my $cargs = $cleanser->clone_and_clean($args->{args});
-        $log->tracef("---> %s(%s)", $args->{name}, $cargs);
+        my $cargs  = $cleanser->clone_and_clean($args->{args});
+        my $largs  = $args->{logger_args} // {};
+        my $indent = " " x ($nest_level * ($args->{logger_args}{indent} //
+                                             $default_indent));
+        $log->tracef("%s---> %s(%s)", $indent, $args->{name}, $cargs);
+        $nest_level++;
     }
 }
 
 sub _default_postcall_logger {
     my $args = shift;
     if ($log->is_trace) {
+        my $largs  = $args->{logger_args} // {};
+        my $indent = " " x ($nest_level * ($args->{logger_args}{indent} //
+                                               $default_indent));
         if (@{$args->{result}}) {
             my $cres = $cleanser->clone_and_clean($args->{result});
-            $log->tracef("<--- %s() = %s", $args->{name}, $cres);
+            $log->tracef("%s<--- %s() = %s", $indent, $args->{name}, $cres);
         } else {
-            $log->tracef("<--- %s()", $args->{name});
+            $log->tracef("%s<--- %s()", $indent, $args->{name});
         }
+        $nest_level--;
     }
 }
 
@@ -81,9 +93,15 @@ _
 Code will be called when logging method call. Code will be given a hashref
 argument \%args containing these keys: `args` (arrayref, the original @_),
 `orig` (coderef, the original method), `name` (string, the fully-qualified
-method name).
+method name), `logger_args` (arguments given when adding logging).
 
 You can use this mechanism to customize logging.
+
+The default logger accepts this arguments (in `logger_args`):
+
+* indent => INT (default: 0)
+
+Indent according to nesting level.
 
 _
         },
@@ -95,9 +113,19 @@ _
 Just like precall_logger, but code will be called after method is call. Code
 will be given a hashref argument \%args containing these keys: `args` (arrayref,
 the original @_), `orig` (coderef, the original method), `name` (string, the
-fully-qualified method name), `result` (arrayref, the method result).
+fully-qualified method name), `result` (arrayref, the method result),
+`logger_args` (arguments given when adding logging).
 
 You can use this mechanism to customize logging.
+
+_
+        },
+        logger_args => {
+            summary => 'Pass arguments to logger',
+            schema  => 'any*',
+            description => <<'_',
+
+This allows passing arguments to logger routine (see `logger_args`).
 
 _
         },
@@ -172,6 +200,7 @@ sub add_logging_to_package {
                     orig   => $sub,
                     name   => $name,
                     args   => \@_,
+                    logger_args => $args{logger_args},
                 );
 
                 $logger = $args{precall_logger} // \&_default_precall_logger;
