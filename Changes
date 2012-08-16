@@ -1,5 +1,18 @@
 Revision history for Log-Any-For-Class
 
+0.09     2012-08-16 (SHARYANTO)
+
+         [REMOVED FEATURES]
+
+         - Remove 'filter_args' argument. What I was needed was actually just
+           cleaning.
+
+         [ENHANCEMENTS]
+
+         - Use Data::Clean::JSON (and customize it a bit) to clean/filter args
+           and result when showing in log.
+
+
 0.08     2012-08-16 (SHARYANTO)
 
          - Add 'filter_args' argument. By default, show objects as '(<Classname>
