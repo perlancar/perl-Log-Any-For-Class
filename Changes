@@ -1,5 +1,13 @@
 Revision history for Log-Any-For-Class
 
+0.15     2012-08-16 (SHARYANTO)
+
+         [ENHANCEMENTS]
+
+         - Allow adding logging to packages during import (e.g. 'use
+           Log::Any::For::Package qw(Foo Bar)') for convenience.
+
+
 0.14     2012-08-16 (SHARYANTO)
 
          No functional changes. Fix Log::Any::For::Class's default logger which

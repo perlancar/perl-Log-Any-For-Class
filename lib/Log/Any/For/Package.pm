@@ -24,7 +24,6 @@ sub import {
             my @c = caller(0);
             *{"$c[0]::$arg"} = \&$arg;
         } else {
-            use Data::Dump; dd $arg;
             add_logging_to_package(packages => [$arg]);
         }
     }
