@@ -12,11 +12,23 @@ use Data::Clone;
 use Sub::Uplevel;
 
 our %SPEC;
-require Exporter;
-our @ISA = qw(Exporter);
-our @EXPORT_OK = qw(add_logging_to_package);
 
 my $cleanser = Data::Clean::JSON->new(-ref => ['stringify']);
+
+sub import {
+    my $class = shift;
+
+    for my $arg (@_) {
+        if ($arg eq 'add_logging_to_package') {
+            no strict 'refs';
+            my @c = caller(0);
+            *{"$c[0]::$arg"} = \&$arg;
+        } else {
+            use Data::Dump; dd $arg;
+            add_logging_to_package(packages => [$arg]);
+        }
+    }
+}
 
 # XXX copied from SHARYANTO::Package::Util
 sub package_exists {
@@ -257,9 +269,27 @@ sub add_logging_to_package {
 
 =head1 SYNOPSIS
 
+ # Add log to some packages
+
+ use Foo;
+ use Bar;
+ use Log::Any::For::Package qw(Foo Bar);
+ ...
+
+ # Now calls to your module functions are logged, by default at level 'trace'.
+ # To see the logs, use e.g. Log::Any::App in command-line:
+
+ % TRACE=1 perl -MLog::Any::App -MFoo -MBar -MLog::Any::For::Package=Foo,Bar \
+     -e'Foo::func(1, 2, 3)'
+ ---> Foo::func([1, 2, 3])
+  ---> Bar::nested()
+  <--- Bar::nested()
+ <--- Foo::func() = 'result'
+
+ # Using add_logging_to_package(), gives more options
+
  use Log::Any::For::Package qw(add_logging_to_package);
  add_logging_to_package(packages => [qw/My::Module My::Other::Module/]);
- # now calls to your module functions are logged, by default at level 'trace'
 
 
 =head1 CREDITS
@@ -270,5 +300,8 @@ Some code portion taken from L<Devel::TraceMethods>.
 =head1 SEE ALSO
 
 L<Log::Any::For::Class>
+
+For some modules, use the appropriate Log::Any::For::*, for example:
+L<Log::Any::For::DBI>, L<Log::Any::For::LWP>.
 
 =cut

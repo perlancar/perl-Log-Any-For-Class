@@ -9,12 +9,23 @@ use Log::Any '$log';
 
 use Data::Clone;
 use Scalar::Util qw(blessed);
+use Log::Any::For::Package ();
 
 our %SPEC;
-require Exporter;
-use Log::Any::For::Package qw(add_logging_to_package);
-our @ISA = qw(Log::Any::For::Package Exporter);
-our @EXPORT_OK = qw(add_logging_to_class);
+
+sub import {
+    my $class = shift;
+
+    for my $arg (@_) {
+        if ($arg eq 'add_logging_to_class') {
+            no strict 'refs';
+            my @c = caller(0);
+            *{"$c[0]::$arg"} = \&$arg;
+        } else {
+            add_logging_to_class(packages => [$arg]);
+        }
+    }
+}
 
 sub _default_precall_logger {
     my $args  = shift;
