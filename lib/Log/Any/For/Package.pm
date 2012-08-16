@@ -107,15 +107,15 @@ _
             schema  => 'code*',
             description => <<'_',
 
-Code will be called when logging method call. Code will be given a hashref
-argument \%args containing these keys: `args` (arrayref, a shallow copy of the
-original @_), `orig` (coderef, the original method), `name` (string, the
-fully-qualified method name), `logger_args` (arguments given when adding
-logging).
+Code will be called when logging subroutine/method call. Code will be given a
+hashref argument \%args containing these keys: `args` (arrayref, a shallow copy
+of the original @_), `orig` (coderef, the original subroutine/method), `name`
+(string, the fully-qualified subroutine/method name), `logger_args` (arguments
+given when adding logging).
 
 You can use this mechanism to customize logging.
 
-The default logger accepts this arguments (in `logger_args`):
+The default logger accepts these arguments (can be supplied via `logger_args`):
 
 * indent => INT (default: 0)
 
@@ -132,12 +132,12 @@ _
             schema  => 'code*',
             description => <<'_',
 
-Just like precall_logger, but code will be called after method is call. Code
-will be given a hashref argument \%args containing these keys: `args` (arrayref,
-a shallow copy of the original @_), `orig` (coderef, the original method),
-`name` (string, a shallow copy of the fully-qualified method name), `result`
-(arrayref, the method result), `logger_args` (arguments given when adding
-logging).
+Just like precall_logger, but code will be called after subroutine/method is
+called. Code will be given a hashref argument \%args containing these keys:
+`args` (arrayref, a shallow copy of the original @_), `orig` (coderef, the
+original subroutine/method), `name` (string, the fully-qualified
+subroutine/method name), `result` (arrayref, the subroutine/method result),
+`logger_args` (arguments given when adding logging).
 
 You can use this mechanism to customize logging.
 
@@ -172,7 +172,7 @@ sub add_logging_to_package {
     my $packages = $args{packages} or die "Please specify 'packages'";
     $packages = [$packages] unless ref($packages) eq 'ARRAY';
 
-    my $filter = $args{filter_subs} // qr/[^_]/;
+    my $filter = $args{filter_subs} // qr/::[^_]\w+$/;
 
     for my $package (@$packages) {
 
