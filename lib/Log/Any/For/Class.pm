@@ -41,7 +41,7 @@ sub _default_postcall_logger {
     }
 }
 
-my $spec = $Log::Any::For::Package::SPEC{add_logging_to_package};
+my $spec = clone $Log::Any::For::Package::SPEC{add_logging_to_package};
 $spec->{summary} = 'Add logging to class';
 $spec->{description} = <<'_';
 
