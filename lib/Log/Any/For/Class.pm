@@ -105,9 +105,10 @@ sub add_logging_to_class {
  # now method calls to your classes are logged, by default at level 'trace'
 
 
-=head1 CREDITS
+=head1 DESCRIPTION
 
-Some code portion taken from L<Devel::TraceMethods>.
+Most of the things that apply to L<Log::Any::For::Package> also applies to this
+module, since this module uses add_logging_to_package() as its backend.
 
 
 =head1 SEE ALSO
