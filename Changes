@@ -1,5 +1,12 @@
 Revision history for Log-Any-For-Class
 
+0.13     2012-08-16 (SHARYANTO)
+
+         No functional changes. Fix regression (we do need to copy @_, because
+         'args' might need to be changed, e.g. in Log::Any::For::DBI to mask
+         passwords).
+
+
 0.12     2012-08-16 (SHARYANTO)
 
          [ENHANCEMENTS]
