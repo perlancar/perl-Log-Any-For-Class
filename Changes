@@ -1,5 +1,13 @@
 Revision history for Log-Any-For-Class
 
+0.08     2012-08-16 (SHARYANTO)
+
+         - Add 'filter_args' argument. By default, show objects as '(<Classname>
+           object)' instead of dumping them.
+
+         - Use Sub::Uplevel so not to mess with caller().
+
+
 0.07     2012-07-17 (SHARYANTO)
 
          Previous release doesn't work. Revert to 0.05.
