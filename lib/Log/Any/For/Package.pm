@@ -186,11 +186,10 @@ sub add_logging_to_package {
             # replace the sub in the source
             $src->{$symbol} = sub {
                 my $logger;
-                my @args = @_;
                 my %largs = (
                     orig   => $sub,
                     name   => $name,
-                    args   => [@args],
+                    args   => [@_],
                 );
 
                 my $fa = $args{filter_args} // \&_default_filter_args;
@@ -202,11 +201,11 @@ sub add_logging_to_package {
                 my $wa = wantarray;
                 my @res;
                 if ($wa) {
-                    @res = uplevel 1, $sub->(@args);
+                    @res = uplevel 1, $sub, @_;
                 } elsif (defined $wa) {
-                    $res[0] = uplevel 1, $sub->(@args);
+                    $res[0] = uplevel 1, $sub, @_;
                 } else {
-                    uplevel 1, $sub->(@args);
+                    uplevel 1, $sub, @_;
                 }
 
                 $logger = $args{postcall_logger} // \&_default_postcall_logger;
