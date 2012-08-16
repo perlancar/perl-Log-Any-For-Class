@@ -1,5 +1,15 @@
 Revision history for Log-Any-For-Class
 
+0.10     2012-08-16 (SHARYANTO)
+
+         [ENHANCEMENTS]
+
+         - Add 'logger_args' argument to allow passing arguments to logger
+           routines.
+
+         - Indent log message according to nest level (default indent=1).
+
+
 0.09     2012-08-16 (SHARYANTO)
 
          [REMOVED FEATURES]
