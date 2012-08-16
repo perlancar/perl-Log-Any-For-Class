@@ -7,13 +7,16 @@ use Log::Any '$log';
 
 # VERSION
 
-use Scalar::Util qw(blessed);
+use Data::Clean::JSON;
+use Data::Clone;
 use Sub::Uplevel;
 
 our %SPEC;
 require Exporter;
 our @ISA = qw(Exporter);
 our @EXPORT_OK = qw(add_logging_to_package);
+
+my $cleanser = Data::Clean::JSON->new(-ref => ['stringify']);
 
 # XXX copied from SHARYANTO::Package::Util
 sub package_exists {
@@ -29,26 +32,23 @@ sub package_exists {
     }
 }
 
-sub _default_filter_args {
-    my $args = shift;
-    for (@{ $args->{args} }) {
-        if (blessed $_) {
-            $_ = "(" . ref($_) . " object)";
-        }
-    }
-}
-
 sub _default_precall_logger {
     my $args = shift;
-    $log->tracef("---> %s(%s)", $args->{name}, $args->{args});
+    if ($log->is_trace) {
+        my $cargs = $cleanser->clone_and_clean($args->{args});
+        $log->tracef("---> %s(%s)", $args->{name}, $cargs);
+    }
 }
 
 sub _default_postcall_logger {
     my $args = shift;
-    if (@{$args->{result}}) {
-        $log->tracef("<--- %s() = %s", $args->{name}, $args->{result});
-    } else {
-        $log->tracef("<--- %s()", $args->{name});
+    if ($log->is_trace) {
+        if (@{$args->{result}}) {
+            my $cres = $cleanser->clone_and_clean($args->{result});
+            $log->tracef("<--- %s() = %s", $args->{name}, $cres);
+        } else {
+            $log->tracef("<--- %s()", $args->{name});
+        }
     }
 }
 
@@ -79,9 +79,9 @@ _
             description => <<'_',
 
 Code will be called when logging method call. Code will be given a hashref
-argument \%args containing these keys: `args` (arrayref, a shallow copy of the
-original @_), `orig` (coderef, the original method), `name` (string, the
-fully-qualified method name).
+argument \%args containing these keys: `args` (arrayref, the original @_),
+`orig` (coderef, the original method), `name` (string, the fully-qualified
+method name).
 
 You can use this mechanism to customize logging.
 
@@ -94,9 +94,8 @@ _
 
 Just like precall_logger, but code will be called after method is call. Code
 will be given a hashref argument \%args containing these keys: `args` (arrayref,
-a shallow copy of the original @_), `orig` (coderef, the original method),
-`name` (string, the fully-qualified method name), `result` (arrayref, the method
-result).
+the original @_), `orig` (coderef, the original method), `name` (string, the
+fully-qualified method name), `result` (arrayref, the method result).
 
 You can use this mechanism to customize logging.
 
@@ -109,23 +108,6 @@ _
 
 The default is to add logging to all non-private subroutines. Private
 subroutines are those prefixed by `_`.
-
-_
-        },
-        filter_args => {
-            summary => 'Filter for @_',
-            schema => 'code*',
-            description => <<'_',
-
-Filter arguments to log. The default is to log @_ as is. Code will be given a
-hashref argument \%args containing these keys: `args` (arrayref, a shallow copy
-of the original @_). Code is expected to filter out unwanted stuffs in `args`.
-
-This is usually used to filter out long object or data, e.g. replace it with
-`(object)`, `...`, or whatever.
-
-If unspecified, the default filter is used. The default filter does replace
-objects with '(<classname> object)'.
 
 _
         },
@@ -189,11 +171,8 @@ sub add_logging_to_package {
                 my %largs = (
                     orig   => $sub,
                     name   => $name,
-                    args   => [@_],
+                    args   => \@_,
                 );
-
-                my $fa = $args{filter_args} // \&_default_filter_args;
-                $fa->({args => $largs{args}});
 
                 $logger = $args{precall_logger} // \&_default_precall_logger;
                 $logger->(\%largs);
