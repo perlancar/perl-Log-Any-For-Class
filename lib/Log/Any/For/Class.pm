@@ -9,7 +9,7 @@ use Log::Any '$log';
 
 use Data::Clone;
 use Scalar::Util qw(blessed);
-use Log::Any::For::Package ();
+use Log::Any::For::Package qw(add_logging_to_package);
 
 our %SPEC;
 
