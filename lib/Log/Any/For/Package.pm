@@ -157,8 +157,11 @@ _
             schema => ['any*' => {of=>['regex*', 'code*']}],
             description => <<'_',
 
-The default is to add logging to all non-private subroutines. Private
-subroutines are those prefixed by `_`.
+The default is to read from environment LOG_PACKAGE_INCLUDE_SUB_RE and
+LOG_PACKAGE_EXCLUDE_SUB_RE (these should contain regex that will be matched
+against fully-qualified subroutine/method name), or, if those environment are
+undefined, add logging to all non-private subroutines (private subroutines are
+those prefixed by `_`). For example.
 
 _
         },
@@ -172,7 +175,23 @@ sub add_logging_to_package {
     my $packages = $args{packages} or die "Please specify 'packages'";
     $packages = [$packages] unless ref($packages) eq 'ARRAY';
 
-    my $filter = $args{filter_subs} // qr/::[^_]\w+$/;
+    my $filter = $args{filter_subs};
+    my $envincre = $ENV{LOG_PACKAGE_INCLUDE_SUB_RE};
+    my $envexcre = $ENV{LOG_PACKAGE_EXCLUDE_SUB_RE};
+    if (!defined($filter) && (defined($envincre) || defined($envexcre))) {
+        $filter = sub {
+            local $_ = shift;
+            if (defined $envexcre) {
+                return 0 if /$envexcre/;
+                return 1 unless defined($envincre);
+            }
+            if (defined $envincre) {
+                return 1 if /$envincre/;
+                return 0;
+            }
+        };
+    }
+    $filter //= qr/::[^_]\w+$/;
 
     for my $package (@$packages) {
 
@@ -289,6 +308,13 @@ sub add_logging_to_package {
 
  use Log::Any::For::Package qw(add_logging_to_package);
  add_logging_to_package(packages => [qw/My::Module My::Other::Module/]);
+
+
+=head1 ENVIRONMENT
+
+LOG_PACKAGE_INCLUDE_SUB_RE
+
+LOG_PACKAGE_EXCLUDE_SUB_RE
 
 
 =head1 CREDITS
