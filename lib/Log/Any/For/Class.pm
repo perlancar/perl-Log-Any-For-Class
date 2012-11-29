@@ -85,9 +85,14 @@ sub add_logging_to_class {
     my $filter_methods = $args{filter_methods};
     delete $args{filter_methods};
 
-    $args{precall_logger}  //= \&_default_precall_logger;
-    $args{postcall_logger} //= \&_default_postcall_logger;
-
+    if (!$args{precall_logger}) {
+        $args{precall_logger} = \&_default_precall_logger;
+        $args{logger_args}{precall_wrapper_depth} = 3;
+    }
+    if (!$args{postcall_logger}) {
+        $args{postcall_logger} = \&_default_postcall_logger;
+        $args{logger_args}{postcall_wrapper_depth} = 3;
+    }
     add_logging_to_package(
         %args,
         packages => $classes,

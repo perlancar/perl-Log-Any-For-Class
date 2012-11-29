@@ -52,12 +52,14 @@ sub _default_precall_logger {
 
     if ($log->is_trace) {
 
+        my $largs  = $args->{logger_args} // {};
+
         # there is no equivalent of caller_depth in Log::Any, so we do this only
         # for Log4perl
-        local $Log::Log4perl::caller_depth = $Log::Log4perl::caller_depth + 2
+        my $wd = $largs->{precall_wrapper_depth} // 2;
+        local $Log::Log4perl::caller_depth = $Log::Log4perl::caller_depth + $wd
             if $Log::{"Log4perl::"};
 
-        my $largs  = $args->{logger_args} // {};
         my $md     = $largs->{max_depth} // $default_max_depth;
         if ($md == -1 || $nest_level < $md) {
             my $indent = " "x($nest_level*($largs->{indent}//$default_indent));
@@ -75,12 +77,14 @@ sub _default_postcall_logger {
     $nest_level--;
     if ($log->is_trace) {
 
+        my $largs  = $args->{logger_args} // {};
+
         # there is no equivalent of caller_depth in Log::Any, so we do this only
         # for Log4perl
-        local $Log::Log4perl::caller_depth = $Log::Log4perl::caller_depth + 2
+        my $wd = $largs->{postcall_wrapper_depth} // 2;
+        local $Log::Log4perl::caller_depth = $Log::Log4perl::caller_depth + $wd
             if $Log::{"Log4perl::"};
 
-        my $largs  = $args->{logger_args} // {};
         my $md     = $largs->{max_depth} // $default_max_depth;
         if ($md == -1 || $nest_level < $md) {
             my $indent = " "x($nest_level*($largs->{indent}//$default_indent));
@@ -162,7 +166,7 @@ _
             schema  => 'any*',
             description => <<'_',
 
-This allows passing arguments to logger routine (see `logger_args`).
+This allows passing arguments to logger routine.
 
 _
         },
