@@ -1,5 +1,12 @@
 Revision history for Log-Any-For-Class
 
+0.19     2012-11-29 (SHARYANTO)
+
+         [BUG FIXES]
+
+         - Adjust caller_depth for nested call inside logged package.
+
+
 0.18     2012-11-29 (SHARYANTO)
 
          [BUG FIXES]
