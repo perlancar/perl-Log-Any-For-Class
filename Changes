@@ -1,5 +1,12 @@
 Revision history for Log-Any-For-Class
 
+0.18     2012-11-29 (SHARYANTO)
+
+         [BUG FIXES]
+
+         - caller_depth adjustment didn't work for Log::Any::For::Class.
+
+
 0.17     2012-11-29 (SHARYANTO)
 
          [ENHANCEMENTS]
