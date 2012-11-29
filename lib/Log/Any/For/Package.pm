@@ -51,6 +51,12 @@ sub _default_precall_logger {
     my $args  = shift;
 
     if ($log->is_trace) {
+
+        # there is no equivalent of caller_depth in Log::Any, so we do this only
+        # for Log4perl
+        local $Log::Log4perl::caller_depth = $Log::Log4perl::caller_depth + 2
+            if $Log::{"Log4perl::"};
+
         my $largs  = $args->{logger_args} // {};
         my $md     = $largs->{max_depth} // $default_max_depth;
         if ($md == -1 || $nest_level < $md) {
@@ -58,6 +64,7 @@ sub _default_precall_logger {
             my $cargs  = $cleanser->clone_and_clean($args->{args});
             $log->tracef("%s---> %s(%s)", $indent, $args->{name}, $cargs);
         }
+
     }
     $nest_level++;
 }
@@ -67,6 +74,12 @@ sub _default_postcall_logger {
 
     $nest_level--;
     if ($log->is_trace) {
+
+        # there is no equivalent of caller_depth in Log::Any, so we do this only
+        # for Log4perl
+        local $Log::Log4perl::caller_depth = $Log::Log4perl::caller_depth + 2
+            if $Log::{"Log4perl::"};
+
         my $largs  = $args->{logger_args} // {};
         my $md     = $largs->{max_depth} // $default_max_depth;
         if ($md == -1 || $nest_level < $md) {
@@ -78,6 +91,7 @@ sub _default_postcall_logger {
                 $log->tracef("%s<--- %s()", $indent, $args->{name});
             }
         }
+
     }
 }
 
