@@ -310,6 +310,19 @@ sub add_logging_to_package {
  add_logging_to_package(packages => [qw/My::Module My::Other::Module/]);
 
 
+=head1 FAQ
+
+=head2 My package Foo is not in a separate source file, Log::Any::For::Package tries to require Foo and dies.
+
+Log::Any::For::Package detects whether package Foo already exists, and require()
+the module if it does not. To avoid the require(), simply declare the package
+before use()-ing Log::Any::For::Package, e.g.:
+
+ BEGIN { package Foo; ... }
+ package main;
+ use Log::Any::For::Package qw(Foo);
+
+
 =head1 ENVIRONMENT
 
 LOG_PACKAGE_INCLUDE_SUB_RE
