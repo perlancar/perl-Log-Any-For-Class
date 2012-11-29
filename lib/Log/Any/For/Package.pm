@@ -30,7 +30,7 @@ sub import {
 }
 
 # XXX copied from SHARYANTO::Package::Util
-sub package_exists {
+sub _package_exists {
     no strict 'refs';
 
     my $pkg = shift;
@@ -168,7 +168,7 @@ _
         },
         filter_subs => {
             summary => 'Filter subroutines to add logging to',
-            schema => ['any*' => {of=>['regex*', 'code*']}],
+            schema => ['any*' => {of=>['re*', 'code*']}],
             description => <<'_',
 
 The default is to read from environment LOG_PACKAGE_INCLUDE_SUB_RE and
@@ -213,7 +213,7 @@ sub add_logging_to_package {
             unless $package =~ /\A\w+(::\w+)*\z/;
 
         # require module
-        unless (package_exists($package)) {
+        unless (_package_exists($package)) {
             eval "use $package; 1" or die "Can't load $package: $@";
         }
 
