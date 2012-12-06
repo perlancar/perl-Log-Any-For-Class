@@ -9,6 +9,7 @@ use Log::Any '$log';
 
 use Data::Clean::JSON;
 use Data::Clone;
+use SHARYANTO::Package::Util qw(package_exists list_package_contents);
 use Sub::Uplevel;
 
 our %SPEC;
@@ -26,20 +27,6 @@ sub import {
         } else {
             add_logging_to_package(packages => [$arg]);
         }
-    }
-}
-
-# XXX copied from SHARYANTO::Package::Util
-sub _package_exists {
-    no strict 'refs';
-
-    my $pkg = shift;
-
-    return unless $pkg =~ /\A\w+(::\w+)*\z/;
-    if ($pkg =~ s/::(\w+)\z//) {
-        return !!${$pkg . "::"}{$1 . "::"};
-    } else {
-        return !!$::{$pkg . "::"};
     }
 }
 
@@ -217,44 +204,27 @@ sub add_logging_to_package {
             unless $package =~ /\A\w+(::\w+)*\z/;
 
         # require module
-        unless (_package_exists($package)) {
+        unless (package_exists($package)) {
             eval "use $package; 1" or die "Can't load $package: $@";
         }
 
-        my $src;
-        # get the calling package symbol table name
-        {
-            no strict 'refs';
-            $src = \%{ $package . '::' };
-        }
+        my %contents = list_package_contents($package);
+        for my $sym (keys %contents) {
+            my $sub = $contents{$sym};
+            next unless ref($sub) eq 'CODE';
 
-        # loop through all symbols in calling package, looking for subs
-        for my $symbol (keys %$src) {
-            # get all code references, make sure they're valid
-            my $sub = *{ $src->{$symbol} }{CODE};
-            next unless defined $sub and defined &$sub;
-
-            my $name = "${package}::$symbol";
+            my $name = "${package}::$sym";
             if (ref($filter) eq 'CODE') {
                 next unless $filter->($name);
             } else {
                 next unless $name =~ $filter;
             }
 
-            # save all other slots of the typeglob
-            my @slots;
-
-            for my $slot (qw( SCALAR ARRAY HASH IO FORMAT )) {
-                my $elem = *{ $src->{$symbol} }{$slot};
-                next unless defined $elem;
-                push @slots, $elem;
-            }
-
-            # clear out the source glob
-            undef $src->{$symbol};
+            no strict 'refs';
+            no warnings; # redefine sub
 
             # replace the sub in the source
-            $src->{$symbol} = sub {
+            *{"$package\::$sym"} = sub {
                 my $logger;
                 my %largs = (
                     orig   => $sub,
@@ -289,11 +259,7 @@ sub add_logging_to_package {
                 }
             };
 
-            # replace the other slot elements
-            for my $elem (@slots) {
-                $src->{$symbol} = $elem;
-            }
-        } # for $symbol
+        } # for $sym
 
     } # for $package
 
