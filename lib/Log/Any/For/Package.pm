@@ -119,35 +119,17 @@ _
             pos => 0,
             description => <<'_',
 
-Each element can be the name of a package or a regex pattern. Package will be
-checked for existence; if it doesn't already exist then the module will be
-require()'d.
+Each element can be the name of a package or a regex pattern (any non-valid
+package name will be regarded as a regex). Package will be checked for
+existence; if it doesn't already exist then the module will be require()'d.
 
-_
-        },
-        install_import_hook => {
-            summary => 'Whether to install hook to @INC',
-            schema  => [bool => {default=>0}],
-            description => <<'_',
+This module will also install an @INC import hook if you have regex. So if you
+do this:
 
-The default can also be supplied via environment
-LOG_PACKAGE_INSTALL_IMPORT_HOOK. If set to true, will install a hook in @INC to
-check what module is being required. If a module matches regex pattern in
-`packages`, will load the module and add logging into the package. So basically
-the handler enables you to declare up front what packages you are interested in
-adding logging to, before you actually load the package.
+    % perl -MData::Sah -MLog::Any::For::Package=Data::Sah::.* -e'...'
 
-For example:
-
-    % LOG_PACKAGE_INSTALL_IMPORT_HOOK=1 \
-      perl -MLog::Any::For::Package=^Data::Sah::.+ -MData::Sah -e '...'
-
-The above code will add logging to any modules below Data::Sah::*, for example
-Data::Sah::Compiler, Data::Sah::Compiler::perl, and so on. These modules have
-not been loaded at the time of declaring the logging.
-
-Won't install twice, so only the handler from the first call to
-add_logging_to_package() is installed into @INC.
+then if Data::Sah::Compiler, Data::Sah::Lang, etc get loaded, the import hook
+will automatically add logging to it.
 
 _
         },
@@ -310,9 +292,11 @@ sub add_logging_to_package {
         } # for $sym
     };
 
+    my $has_re;
     for my $package (@$packages) {
         unless ($package =~ /\A\w+(::\w+)*\z/) {
             $package = qr/$package/;
+            $has_re++;
             next;
         }
 
@@ -327,8 +311,7 @@ sub add_logging_to_package {
 
     use Data::Dump;
 
-    if ($args{install_import_hook} //
-            $ENV{LOG_PACKAGE_INSTALL_IMPORT_HOOK} // 0) {
+    if ($has_re) {
         unless ($import_hook_installed++) {
             unshift @INC, sub {
                 my ($self, $module) = @_;
@@ -405,8 +388,6 @@ before use()-ing Log::Any::For::Package, e.g.:
 =head2 LOG_PACKAGE_INCLUDE_SUB_RE (str)
 
 =head2 LOG_PACKAGE_EXCLUDE_SUB_RE (str)
-
-=head2 LOG_PACKAGE_INSTALL_IMPORT_HOOK (bool)
 
 =head2 LOG_SUB_ARGS (bool)
 
