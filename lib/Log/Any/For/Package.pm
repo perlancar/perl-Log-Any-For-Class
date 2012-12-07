@@ -51,7 +51,7 @@ sub _default_precall_logger {
         if ($md == -1 || $nest_level < $md) {
             my $indent = " "x($nest_level*($largs->{indent}//$default_indent));
             my $cargs;
-            if ($ENV{LOG_SUB_ARGS} // 1) {
+            if ($largs->{log_sub_args} // $ENV{LOG_SUB_ARGS} // 1) {
                 $cargs = $cleanser->clone_and_clean($args->{args});
             } else {
                 $cargs = "...";
@@ -82,7 +82,7 @@ sub _default_postcall_logger {
             my $indent = " "x($nest_level*($largs->{indent}//$default_indent));
             if (@{$args->{result}}) {
                 my $cres;
-                if ($ENV{LOG_SUB_RESULT} // 1) {
+                if ($largs->{log_sub_result} // $ENV{LOG_SUB_RESULT} // 1) {
                     $cres = $cleanser->clone_and_clean($args->{result});
                 } else {
                     $cres = "...";
@@ -105,8 +105,8 @@ Logging will be done using Log::Any.
 
 Currently this function adds logging around function calls, e.g.:
 
-    -> Package::func(...)
-    <- Package::func() = RESULT
+    ---> Package::func(ARGS)
+    <--- Package::func() = RESULT
     ...
 
 _
@@ -139,6 +139,16 @@ Indent according to nesting level.
 * max_depth => INT (default: -1)
 
 Only log to this nesting level. -1 means unlimited.
+
+* log_sub_args => BOOL (default: 1)
+
+Whether to display subroutine arguments when logging subroutine entry. The default can also
+be supplied via environment LOG_SUB_ARGS.
+
+* log_sub_result => BOOL (default: 1)
+
+Whether to display subroutine result when logging subroutine exit. The default
+can also be set via environment LOG_SUB_RESULT.
 
 _
         },
@@ -323,14 +333,9 @@ before use()-ing Log::Any::For::Package, e.g.:
 
 =head2 LOG_PACKAGE_EXCLUDE_SUB_RE (str)
 
-=head2 LOG_SUB_ARGS (bool, default 1)
+=head2 LOG_SUB_ARGS (bool)
 
-If set to false, won't display subroutine arguments when logging subroutine
-entry.
-
-=head2 LOG_SUB_RESULT (bool, default 1)
-
-If set to false, won't display subroutine result when logging subroutine exit.
+=head2 LOG_SUB_RESULT (bool)
 
 
 =head1 CREDITS
