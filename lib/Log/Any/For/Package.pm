@@ -50,7 +50,12 @@ sub _default_precall_logger {
         my $md     = $largs->{max_depth} // $default_max_depth;
         if ($md == -1 || $nest_level < $md) {
             my $indent = " "x($nest_level*($largs->{indent}//$default_indent));
-            my $cargs  = $cleanser->clone_and_clean($args->{args});
+            my $cargs;
+            if ($ENV{LOG_SUB_ARGS} // 1) {
+                $cargs = $cleanser->clone_and_clean($args->{args});
+            } else {
+                $cargs = "...";
+            }
             $log->tracef("%s---> %s(%s)", $indent, $args->{name}, $cargs);
         }
 
@@ -76,7 +81,12 @@ sub _default_postcall_logger {
         if ($md == -1 || $nest_level < $md) {
             my $indent = " "x($nest_level*($largs->{indent}//$default_indent));
             if (@{$args->{result}}) {
-                my $cres = $cleanser->clone_and_clean($args->{result});
+                my $cres;
+                if ($ENV{LOG_SUB_RESULT} // 1) {
+                    $cres = $cleanser->clone_and_clean($args->{result});
+                } else {
+                    $cres = "...";
+                }
                 $log->tracef("%s<--- %s() = %s", $indent, $args->{name}, $cres);
             } else {
                 $log->tracef("%s<--- %s()", $indent, $args->{name});
@@ -309,9 +319,18 @@ before use()-ing Log::Any::For::Package, e.g.:
 
 =head1 ENVIRONMENT
 
-LOG_PACKAGE_INCLUDE_SUB_RE
+=head2 LOG_PACKAGE_INCLUDE_SUB_RE (str)
 
-LOG_PACKAGE_EXCLUDE_SUB_RE
+=head2 LOG_PACKAGE_EXCLUDE_SUB_RE (str)
+
+=head2 LOG_SUB_ARGS (bool, default 1)
+
+If set to false, won't display subroutine arguments when logging subroutine
+entry.
+
+=head2 LOG_SUB_RESULT (bool, default 1)
+
+If set to false, won't display subroutine result when logging subroutine exit.
 
 
 =head1 CREDITS
