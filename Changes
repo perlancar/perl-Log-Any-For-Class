@@ -1,5 +1,11 @@
 Revision history for Log-Any-For-Class
 
+0.20     2012-12-06 (SHARYANTO) (not yet released)
+
+         - Utilize SHARYANTO::Package::Util for more robust package-related
+         routines.
+
+
 0.19     2012-11-29 (SHARYANTO)
 
          [BUG FIXES]
