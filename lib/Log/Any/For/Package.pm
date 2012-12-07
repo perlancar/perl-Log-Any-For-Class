@@ -309,8 +309,6 @@ sub add_logging_to_package {
 
     } # for $package
 
-    use Data::Dump;
-
     if ($has_re) {
         unless ($import_hook_installed++) {
             unshift @INC, sub {
