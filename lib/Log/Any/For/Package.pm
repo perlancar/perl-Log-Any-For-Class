@@ -15,6 +15,7 @@ use Sub::Uplevel;
 our %SPEC;
 
 my $cleanser = Data::Clean::JSON->new(-ref => ['stringify']);
+my $import_hook_installed;
 
 sub import {
     my $class = shift;
@@ -116,6 +117,39 @@ _
             schema => ['array*' => {of=>'str*'}],
             req => 1,
             pos => 0,
+            description => <<'_',
+
+Each element can be the name of a package or a regex pattern. Package will be
+checked for existence; if it doesn't already exist then the module will be
+require()'d.
+
+_
+        },
+        install_import_hook => {
+            summary => 'Whether to install hook to @INC',
+            schema  => [bool => {default=>0}],
+            description => <<'_',
+
+The default can also be supplied via environment
+LOG_PACKAGE_INSTALL_IMPORT_HOOK. If set to true, will install a hook in @INC to
+check what module is being required. If a module matches regex pattern in
+`packages`, will load the module and add logging into the package. So basically
+the handler enables you to declare up front what packages you are interested in
+adding logging to, before you actually load the package.
+
+For example:
+
+    % LOG_PACKAGE_INSTALL_IMPORT_HOOK=1 \
+      perl -MLog::Any::For::Package=^Data::Sah::.+ -MData::Sah -e '...'
+
+The above code will add logging to any modules below Data::Sah::*, for example
+Data::Sah::Compiler, Data::Sah::Compiler::perl, and so on. These modules have
+not been loaded at the time of declaring the logging.
+
+Won't install twice, so only the handler from the first call to
+add_logging_to_package() is installed into @INC.
+
+_
         },
         precall_logger => {
             summary => 'Supply custom precall logger',
@@ -194,7 +228,6 @@ _
     result_naked => 1,
 };
 sub add_logging_to_package {
-
     my %args = @_;
 
     my $packages = $args{packages} or die "Please specify 'packages'";
@@ -218,15 +251,9 @@ sub add_logging_to_package {
     }
     $filter //= qr/::[^_]\w+$/;
 
-    for my $package (@$packages) {
-
-        die "Invalid package name $package"
-            unless $package =~ /\A\w+(::\w+)*\z/;
-
-        # require module
-        unless (package_exists($package)) {
-            eval "use $package; 1" or die "Can't load $package: $@";
-        }
+    my $_add = sub {
+        my ($package) = @_;
+        #$log->tracef("Adding logging to package %s ...", $package);
 
         my %contents = list_package_contents($package);
         for my $sym (keys %contents) {
@@ -244,6 +271,7 @@ sub add_logging_to_package {
             no warnings; # redefine sub
 
             # replace the sub in the source
+            #$log->tracef("Adding logging to subroutine %s ...", $sym);
             *{"$package\::$sym"} = sub {
                 my $logger;
                 my %largs = (
@@ -280,8 +308,53 @@ sub add_logging_to_package {
             };
 
         } # for $sym
+    };
+
+    for my $package (@$packages) {
+        unless ($package =~ /\A\w+(::\w+)*\z/) {
+            $package = qr/$package/;
+            next;
+        }
+
+        # require module
+        unless (package_exists($package)) {
+            eval "use $package; 1" or die "Can't load $package: $@";
+        }
+
+        $_add->($package);
 
     } # for $package
+
+    use Data::Dump;
+
+    if ($args{install_import_hook} //
+            $ENV{LOG_PACKAGE_INSTALL_IMPORT_HOOK} // 0) {
+        unless ($import_hook_installed++) {
+            unshift @INC, sub {
+                my ($self, $module) = @_;
+
+                # load the module first
+                local @INC = grep { !ref($_) || $_ != $self } @INC;
+                require $module;
+
+                my $package = $module;
+                $package =~ s/\.pm$//;
+                $package =~ s!/!::!g;
+
+                $_add->($package) if $package ~~ @$packages;
+
+                # ignore this hook
+                my $line = 0;
+                return sub {
+                    unless ($line++) {
+                        $_ = "1;\n";
+                        return 1;
+                    }
+                    return 0;
+                }
+            };
+        }
+    }
 
     1;
 }
@@ -332,6 +405,8 @@ before use()-ing Log::Any::For::Package, e.g.:
 =head2 LOG_PACKAGE_INCLUDE_SUB_RE (str)
 
 =head2 LOG_PACKAGE_EXCLUDE_SUB_RE (str)
+
+=head2 LOG_PACKAGE_INSTALL_IMPORT_HOOK (bool)
 
 =head2 LOG_SUB_ARGS (bool)
 
