@@ -56,15 +56,15 @@ Revision history for Log-Any-For-Class
 
 0.14     2012-08-16 (SHARYANTO)
 
-         No functional changes. Fix Log::Any::For::Class's default logger which
-         didn't understand 'indent' and 'max_depth' logger args.
+         - No functional changes. Fix Log::Any::For::Class's default logger
+           which didn't understand 'indent' and 'max_depth' logger args.
 
 
 0.13     2012-08-16 (SHARYANTO)
 
-         No functional changes. Fix regression (we do need to copy @_, because
-         'args' might need to be changed, e.g. in Log::Any::For::DBI to mask
-         passwords).
+         - No functional changes. Fix regression (we do need to copy @_, because
+           'args' might need to be changed, e.g. in Log::Any::For::DBI to mask
+           passwords).
 
 
 0.12     2012-08-16 (SHARYANTO)
@@ -76,7 +76,7 @@ Revision history for Log-Any-For-Class
 
 0.11     2012-08-16 (SHARYANTO)
 
-         No functional changes. Fix indenting.
+         - No functional changes. Fix indenting.
 
 
 0.10     2012-08-16 (SHARYANTO)
@@ -112,7 +112,7 @@ Revision history for Log-Any-For-Class
 
 0.07     2012-07-17 (SHARYANTO)
 
-         Previous release doesn't work. Revert to 0.05.
+         - Previous release doesn't work. Revert to 0.05.
 
 
 0.06     2012-07-17 (SHARYANTO)
@@ -155,9 +155,9 @@ Revision history for Log-Any-For-Class
 
 0.02     2012-07-10 (SHARYANTO)
 
-         No functional changes. Add missing dep to Log::Any.
+         - No functional changes. Add missing dep to Log::Any.
 
 
 0.01     2012-07-10 (SHARYANTO)
 
-         First release.
+         - First release.
