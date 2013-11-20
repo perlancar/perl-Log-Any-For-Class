@@ -22,7 +22,7 @@ sub import {
             my @c = caller(0);
             *{"$c[0]::$arg"} = \&$arg;
         } else {
-            add_logging_to_class(packages => [$arg]);
+            add_logging_to_class(classes => [$arg]);
         }
     }
 }
