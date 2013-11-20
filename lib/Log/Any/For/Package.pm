@@ -149,20 +149,20 @@ You can use this mechanism to customize logging.
 
 The default logger accepts these arguments (can be supplied via `logger_args`):
 
-* indent => INT (default: 0)
+* `indent` => INT (default: 0)
 
 Indent according to nesting level.
 
-* max_depth => INT (default: -1)
+* `max_depth` => INT (default: -1)
 
 Only log to this nesting level. -1 means unlimited.
 
-* log_sub_args => BOOL (default: 1)
+* `log_sub_args` => BOOL (default: 1)
 
 Whether to display subroutine arguments when logging subroutine entry. The default can also
 be supplied via environment `LOG_SUB_ARGS`.
 
-* log_sub_result => BOOL (default: 1)
+* `log_sub_result` => BOOL (default: 1)
 
 Whether to display subroutine result when logging subroutine exit. The default
 can also be set via environment `LOG_SUB_RESULT`.
