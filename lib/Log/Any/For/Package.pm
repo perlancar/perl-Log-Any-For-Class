@@ -3,6 +3,7 @@ package Log::Any::For::Package;
 use 5.010;
 use strict;
 use warnings;
+use experimental 'smartmatch';
 use Log::Any '$log';
 
 # VERSION
