@@ -1,5 +1,11 @@
 Revision history for Log-Any-For-Class
 
+0.22     2013-11-20 (SHARYANTO)
+
+         - Bugfix: typo in Log::Any::For::Class which prevented 'use
+           Log::Any::For::Class qw(Class1 ...)' to work.
+
+
 0.21     2013-11-20 (SHARYANTO)
 
          - No functional changes. Add logging statement and FAQ item.
