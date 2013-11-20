@@ -235,9 +235,9 @@ sub add_logging_to_package {
 
     my $_add = sub {
         my ($package) = @_;
-        #$log->tracef("Adding logging to package %s ...", $package);
 
         my %contents = list_package_contents($package);
+        my @syms;
         for my $sym (keys %contents) {
             my $sub = $contents{$sym};
             next unless ref($sub) eq 'CODE';
@@ -253,7 +253,7 @@ sub add_logging_to_package {
             no warnings; # redefine sub
 
             # replace the sub in the source
-            #$log->tracef("Adding logging to subroutine %s ...", $sym);
+            push @syms, $sym;
             *{"$package\::$sym"} = sub {
                 my $logger;
                 my %largs = (
@@ -290,6 +290,7 @@ sub add_logging_to_package {
             };
 
         } # for $sym
+        $log->tracef("Added logging to package %s (subs %s)", $package, \@syms);
     };
 
     my $has_re;
@@ -379,6 +380,19 @@ before use()-ing Log::Any::For::Package, e.g.:
  BEGIN { package Foo; ... }
  package main;
  use Log::Any::For::Package qw(Foo);
+
+=head2 How do I know that logging has been added to a package?
+
+Log::Any::For::Package logs a trace statement like this after it added logging
+to a package:
+
+ Added logging to package Foo (subs ["sub1","sub2",...])
+
+If you use L<Log::Any::App> to enable logging, you might not see this log
+message because it is produced during compile-time after C<use Foo>. To see this
+statement, you can do C<require Foo> instead or setup the logging at
+compile-time yourself instead of at the init-phase like what Log::Any::App is
+doing.
 
 
 =head1 ENVIRONMENT
