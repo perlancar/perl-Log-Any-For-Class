@@ -291,7 +291,8 @@ sub add_logging_to_package {
             };
 
         } # for $sym
-        $log->tracef("Added logging to package %s (subs %s)", $package, \@syms);
+        $log->tracef("Added logging to package %s (subs %s)",
+                     $package, [sort @syms]);
     };
 
     my $has_re;
