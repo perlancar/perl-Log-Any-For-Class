@@ -1,5 +1,17 @@
 Revision history for Log-Any-For-Class
 
+0.23     2013-11-20 (SHARYANTO)
+
+         [INCOMPATIBLE CHANGES]
+
+         - Now never load/require modules for you, you need to require modules
+           yourself.
+
+         - Add option 'import_hook' (import option -hook) to install import
+           hook. Otherwise pattern in 'packages' (or 'classes') still will only
+           search in existing packages.
+
+
 0.22     2013-11-20 (SHARYANTO)
 
          - Bugfix: typo in Log::Any::For::Class which prevented 'use
