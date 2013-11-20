@@ -16,13 +16,17 @@ our %SPEC;
 sub import {
     my $class = shift;
 
-    for my $arg (@_) {
-        if ($arg eq 'add_logging_to_class') {
+    my $hook;
+    while (@_) {
+        my $arg = shift;
+        if ($arg eq '-hook') {
+            $hook = shift;
+        } elsif ($arg eq 'add_logging_to_class') {
             no strict 'refs';
             my @c = caller(0);
             *{"$c[0]::$arg"} = \&$arg;
         } else {
-            add_logging_to_class(classes => [$arg]);
+            add_logging_to_class(classes => [$arg], import_hook=>$hook);
         }
     }
 }

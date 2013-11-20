@@ -10,7 +10,8 @@ use Log::Any '$log';
 
 use Data::Clean::JSON;
 use Data::Clone;
-use SHARYANTO::Package::Util qw(package_exists list_package_contents);
+use SHARYANTO::Package::Util qw(package_exists list_package_contents
+                                list_subpackages);
 use Sub::Uplevel;
 
 our %SPEC;
@@ -21,13 +22,17 @@ my $import_hook_installed;
 sub import {
     my $class = shift;
 
-    for my $arg (@_) {
-        if ($arg eq 'add_logging_to_package') {
+    my $hook;
+    while (@_) {
+        my $arg = shift;
+        if ($arg eq '-hook') {
+            $hook = shift;
+        } elsif ($arg eq 'add_logging_to_package') {
             no strict 'refs';
             my @c = caller(0);
             *{"$c[0]::$arg"} = \&$arg;
         } else {
-            add_logging_to_package(packages => [$arg]);
+            add_logging_to_package(packages=>[$arg], import_hook=>1);
         }
     }
 }
@@ -121,16 +126,21 @@ _
             description => <<'_',
 
 Each element can be the name of a package or a regex pattern (any non-valid
-package name will be regarded as a regex). Package will be checked for
-existence; if it doesn't already exist then the module will be require()'d.
+package name will be regarded as a regex). If the package is (comes from) a
+module, the module must already be loaded. This function will not load modules
+for you.
 
-This module will also install an @INC import hook if you have regex. So if you
-do this:
+_
+        },
+        import_hook => {
+            summary => 'Whether to install import (@INC) hook instead',
+            schema  => ['bool' => default => 0],
+            description => <<'_',
 
-    % perl -MData::Sah -MLog::Any::For::Package=Data::Sah::.* -e'...'
-
-then if Data::Sah::Compiler, Data::Sah::Lang, etc get loaded, the import hook
-will automatically add logging to them.
+If this setting is true, then instead of installing logging to all existing
+packages, an @INC import hook will be installed instead so that subsequent
+modules that are loaded and that match `packages` will be logged. So to log all
+subsequent loaded modules, you can set `packages` to `['.*']`.
 
 _
         },
@@ -214,6 +224,7 @@ sub add_logging_to_package {
     my %args = @_;
 
     my $packages = $args{packages} or die "Please specify 'packages'";
+    my $hook     = $args{import_hook};
     $packages = [$packages] unless ref($packages) eq 'ARRAY';
 
     my $filter = $args{filter_subs};
@@ -295,24 +306,7 @@ sub add_logging_to_package {
                      $package, [sort @syms]);
     };
 
-    my $has_re;
-    for my $package (@$packages) {
-        unless ($package =~ /\A\w+(::\w+)*\z/) {
-            $package = qr/$package/;
-            $has_re++;
-            next;
-        }
-
-        # require module
-        unless (package_exists($package)) {
-            eval "use $package; 1" or die "Can't load $package: $@";
-        }
-
-        $_add->($package);
-
-    } # for $package
-
-    if ($has_re) {
+    if ($hook) {
         unless ($import_hook_installed++) {
             unshift @INC, sub {
                 my ($self, $module) = @_;
@@ -338,6 +332,24 @@ sub add_logging_to_package {
                 }
             };
         }
+    } else {
+        my $all_packages;
+        my %processed;
+        for my $package (@$packages) {
+            if ($package =~ /\A\w+(::\w+)*\z/) {
+                next if $processed{$package};
+                $_add->($package);
+                $processed{$package}++;
+            } else {
+                $all_packages //= [list_subpackages("", 1)];
+                for (@$all_packages) {
+                    next unless /$package/;
+                    next if $processed{$_};
+                    $_add->($_);
+                    $processed{$_}++;
+                }
+            }
+        } # for $package
     }
 
     1;
@@ -348,15 +360,16 @@ sub add_logging_to_package {
 
 =head1 SYNOPSIS
 
- # Add log to some packages
+Add log to some existing packages (in other words, modules that are already
+loaded):
 
  use Foo;
  use Bar;
  use Log::Any::For::Package qw(Foo Bar);
  ...
 
- # Now calls to your module functions are logged, by default at level 'trace'.
- # To see the logs, use e.g. Log::Any::App in command-line:
+Now calls to your module functions are logged, by default at level 'trace'. To
+see the logs, use e.g. Log::Any::App in command-line:
 
  % TRACE=1 perl -MLog::Any::App -MFoo -MBar -MLog::Any::For::Package=Foo,Bar \
      -e'Foo::func(1, 2, 3)'
@@ -365,23 +378,23 @@ sub add_logging_to_package {
   <--- Bar::nested()
  <--- Foo::func() = 'result'
 
- # Using add_logging_to_package(), gives more options
+Use C<add_logging_to_package()> which gives more options, e.g. to add log to
+multiple packages specified by regex:
 
  use Log::Any::For::Package qw(add_logging_to_package);
- add_logging_to_package(packages => [qw/My::Module My::Other::Module/]);
+ add_logging_to_package(packages => [qw/Foo::.*/]);
+
+To install an import (C<@INC>) hook so that subsequent modules loaded will be
+logged:
+
+ add_logging_to_package(packages => [...], import_hook=>1);
+
+or, via import:
+
+ % TRACE=1 perl -MLog::Any::App -MLog::Any::For::Package=-hook,1,.* ...
 
 
 =head1 FAQ
-
-=head2 My package Foo is not in a separate source file, Log::Any::For::Package tries to require Foo and dies.
-
-Log::Any::For::Package detects whether package Foo already exists, and require()
-the module if it does not. To avoid the require(), simply declare the package
-before use()-ing Log::Any::For::Package, e.g.:
-
- BEGIN { package Foo; ... }
- package main;
- use Log::Any::For::Package qw(Foo);
 
 =head2 How do I know that logging has been added to a package?
 
