@@ -129,7 +129,7 @@ do this:
     % perl -MData::Sah -MLog::Any::For::Package=Data::Sah::.* -e'...'
 
 then if Data::Sah::Compiler, Data::Sah::Lang, etc get loaded, the import hook
-will automatically add logging to it.
+will automatically add logging to them.
 
 _
         },
@@ -159,12 +159,12 @@ Only log to this nesting level. -1 means unlimited.
 * log_sub_args => BOOL (default: 1)
 
 Whether to display subroutine arguments when logging subroutine entry. The default can also
-be supplied via environment LOG_SUB_ARGS.
+be supplied via environment `LOG_SUB_ARGS`.
 
 * log_sub_result => BOOL (default: 1)
 
 Whether to display subroutine result when logging subroutine exit. The default
-can also be set via environment LOG_SUB_RESULT.
+can also be set via environment `LOG_SUB_RESULT`.
 
 _
         },
@@ -173,7 +173,7 @@ _
             schema  => 'code*',
             description => <<'_',
 
-Just like precall_logger, but code will be called after subroutine/method is
+Just like `precall_logger`, but code will be called after subroutine/method is
 called. Code will be given a hashref argument \%args containing these keys:
 `args` (arrayref, a shallow copy of the original @_), `orig` (coderef, the
 original subroutine/method), `name` (string, the fully-qualified
@@ -198,8 +198,8 @@ _
             schema => ['any*' => {of=>['re*', 'code*']}],
             description => <<'_',
 
-The default is to read from environment LOG_PACKAGE_INCLUDE_SUB_RE and
-LOG_PACKAGE_EXCLUDE_SUB_RE (these should contain regex that will be matched
+The default is to read from environment `LOG_PACKAGE_INCLUDE_SUB_RE` and
+`LOG_PACKAGE_EXCLUDE_SUB_RE` (these should contain regex that will be matched
 against fully-qualified subroutine/method name), or, if those environment are
 undefined, add logging to all non-private subroutines (private subroutines are
 those prefixed by `_`). For example.
