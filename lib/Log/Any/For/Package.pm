@@ -307,7 +307,10 @@ sub add_logging_to_package {
     };
 
     if ($hook) {
-        unless ($import_hook_installed++) {
+        if ($import_hook_installed++) {
+            warn "Only the first add_logging_to_package(import_hook=>1, ...) ".
+                "will be in effect";
+        } else {
             unshift @INC, sub {
                 my ($self, $module) = @_;
 
