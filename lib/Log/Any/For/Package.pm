@@ -396,13 +396,6 @@ statement, you can do C<require Foo> instead or setup the logging at
 compile-time yourself instead of at the init-phase like what Log::Any::App is
 doing.
 
-=head2 I'm getting error message 'Can't call method "comment_style" on unblessed reference at ...'
-
-If you use Moose/Mouse/Moo, at the moment you might want to exclude C<BUILD>
-and/or other special methods from being logged. For example:
-
- % LOG_PACKAGE_EXCLUDE_SUB_RE='BUILD' TRACE=1 perl -MLog::Any::App -MLog::Any::For::Package='Foo::.*' ...
-
 
 =head1 ENVIRONMENT
 
