@@ -6,10 +6,10 @@ use warnings;
 use experimental 'smartmatch';
 use Log::Any '$log';
 
+# DATE
 # VERSION
 
 use Data::Clean::JSON;
-use Data::Clone;
 use SHARYANTO::Package::Util qw(package_exists list_package_contents
                                 list_subpackages);
 use Sub::Uplevel;

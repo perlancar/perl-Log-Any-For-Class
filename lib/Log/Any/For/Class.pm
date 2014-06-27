@@ -5,9 +5,9 @@ use strict;
 use warnings;
 use Log::Any '$log';
 
+# DATE
 # VERSION
 
-use Data::Clone;
 use Scalar::Util qw(blessed);
 use Log::Any::For::Package qw(add_logging_to_package);
 use Perinci::Sub::Util qw(gen_modified_sub);
