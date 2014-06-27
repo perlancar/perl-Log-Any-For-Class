@@ -10,6 +10,7 @@ use Log::Any '$log';
 use Data::Clone;
 use Scalar::Util qw(blessed);
 use Log::Any::For::Package qw(add_logging_to_package);
+use Perinci::Sub::Util qw(gen_modified_sub);
 
 our %SPEC;
 
@@ -47,9 +48,11 @@ sub _default_postcall_logger {
     Log::Any::For::Package::_default_postcall_logger($args);
 }
 
-my $spec = clone $Log::Any::For::Package::SPEC{add_logging_to_package};
-$spec->{summary} = 'Add logging to class';
-$spec->{description} = <<'_';
+gen_modified_sub(
+    output_name => 'add_logging_to_class',
+    base_name => 'Log::Any::For::Package::add_logging_to_package',
+    summary => 'Add logging to class',
+    description => <<'_',
 
 Logging will be done using Log::Any.
 
@@ -60,49 +63,50 @@ Currently this function adds logging around method calls, e.g.:
     ...
 
 _
-delete $spec->{args}{packages};
-$spec->{args}{classes} = {
-    summary => 'Classes to add logging to',
-    schema => ['array*' => {of=>'str*'}],
-    req => 1,
-    pos => 0,
-};
-delete $spec->{args}{filter_subs};
-$spec->{args}{filter_methods} = {
-    summary => 'Filter methods to add logging to',
-    schema => ['array*' => {of=>'str*'}],
-    description => <<'_',
+    remove_args => ['packages', 'filter_subs'],
+    add_args    => {
+        classes => {
+            summary => 'Classes to add logging to',
+            schema => ['array*' => {of=>'str*'}],
+            req => 1,
+            pos => 0,
+        },
+        filter_methods => {
+            summary => 'Filter methods to add logging to',
+            schema => ['array*' => {of=>'str*'}],
+            description => <<'_',
 
 The default is to add logging to all non-private methods. Private methods are
 those prefixed by `_`.
 
 _
-};
-$SPEC{add_logging_to_class} = $spec;
-sub add_logging_to_class {
-    my %args = @_;
+        },
+    },
+    output_code => sub {
+        my %args = @_;
 
-    my $classes = $args{classes} or die "Please specify 'classes'";
-    $classes = [$classes] unless ref($classes) eq 'ARRAY';
-    delete $args{classes};
+        my $classes = $args{classes} or die "Please specify 'classes'";
+        $classes = [$classes] unless ref($classes) eq 'ARRAY';
+        delete $args{classes};
 
-    my $filter_methods = $args{filter_methods};
-    delete $args{filter_methods};
+        my $filter_methods = $args{filter_methods};
+        delete $args{filter_methods};
 
-    if (!$args{precall_logger}) {
-        $args{precall_logger} = \&_default_precall_logger;
-        $args{logger_args}{precall_wrapper_depth} = 3;
-    }
-    if (!$args{postcall_logger}) {
-        $args{postcall_logger} = \&_default_postcall_logger;
-        $args{logger_args}{postcall_wrapper_depth} = 3;
-    }
-    add_logging_to_package(
-        %args,
-        packages => $classes,
-        filter_subs => $filter_methods,
-    );
-}
+        if (!$args{precall_logger}) {
+            $args{precall_logger} = \&_default_precall_logger;
+            $args{logger_args}{precall_wrapper_depth} = 3;
+        }
+        if (!$args{postcall_logger}) {
+            $args{postcall_logger} = \&_default_postcall_logger;
+            $args{logger_args}{postcall_wrapper_depth} = 3;
+        }
+        add_logging_to_package(
+            %args,
+            packages => $classes,
+            filter_subs => $filter_methods,
+        );
+    },
+);
 
 1;
 # ABSTRACT: Add logging to class
