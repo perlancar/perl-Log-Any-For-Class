@@ -1,17 +1,17 @@
 package Log::Any::For::Package;
 
+# DATE
+# VERSION
+
 use 5.010;
 use strict;
 use warnings;
 use experimental 'smartmatch';
 use Log::Any '$log';
 
-# DATE
-# VERSION
-
 use Data::Clean::JSON;
-use SHARYANTO::Package::Util qw(package_exists list_package_contents
-                                list_subpackages);
+use Package::MoreUtil qw(package_exists list_package_contents
+                         list_subpackages);
 use Sub::Uplevel;
 
 our %SPEC;
