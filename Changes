@@ -1,5 +1,13 @@
 Revision history for Log-Any-For-Class
 
+0.24    2014-12-05 (PERLANCAR)
+
+	- No functional changes.
+
+	- Use the new renamed module SHARYANTO::Package::Util ->
+	  Package::MoreUtil.
+
+
 0.23     2013-11-20 (SHARYANTO)
 
          [INCOMPATIBLE CHANGES]
