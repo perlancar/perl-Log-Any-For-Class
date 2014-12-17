@@ -359,7 +359,7 @@ sub add_logging_to_package {
 }
 
 1;
-# ABSTRACT: Add logging to package
+# ABSTRACT:
 
 =head1 SYNOPSIS
 
