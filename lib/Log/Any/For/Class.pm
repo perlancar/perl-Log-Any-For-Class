@@ -109,7 +109,7 @@ _
 );
 
 1;
-# ABSTRACT: Add logging to class
+# ABSTRACT:
 
 =head1 SYNOPSIS
 
