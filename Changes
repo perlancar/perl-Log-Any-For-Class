@@ -1,5 +1,11 @@
 Revision history for Log-Any-For-Class
 
+0.25    2015-04-25 (PERLANCAR)
+
+	- Avoid perl undef warning when Log::Log4perl is not used (one that
+	  works).
+
+
 0.24    2014-12-05 (PERLANCAR)
 
 	- No functional changes.
