@@ -52,7 +52,7 @@ sub _default_precall_logger {
         # for Log4perl
         my $wd = $largs->{precall_wrapper_depth} // 2;
         local $Log::Log4perl::caller_depth = $Log::Log4perl::caller_depth +
-            $wd + $nest_level if $Log::{"Log4perl::"};
+            $wd + $nest_level if defined $Log::Log4perl::caller_depth;
 
         my $md     = $largs->{max_depth} // $default_max_depth;
         if ($md == -1 || $nest_level < $md) {
@@ -82,7 +82,7 @@ sub _default_postcall_logger {
         # for Log4perl
         my $wd = $largs->{postcall_wrapper_depth} // 2;
         local $Log::Log4perl::caller_depth = $Log::Log4perl::caller_depth +
-            $wd + $nest_level if $Log::{"Log4perl::"};
+            $wd + $nest_level if defined $Log::Log4perl::caller_depth;
 
         my $md     = $largs->{max_depth} // $default_max_depth;
         if ($md == -1 || $nest_level < $md) {
