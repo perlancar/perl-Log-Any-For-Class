@@ -1,12 +1,12 @@
 package Log::Any::For::Class;
 
+# DATE
+# VERSION
+
 use 5.010001;
 use strict;
 use warnings;
-use Log::Any '$log';
-
-# DATE
-# VERSION
+use Log::Any::IfLOG '$log';
 
 use Scalar::Util qw(blessed);
 use Log::Any::For::Package qw(add_logging_to_package);
